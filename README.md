@@ -1,34 +1,125 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 网易云音乐使用 next.js 框架优化体验开发记录
 
-## Getting Started
+为什么要使用 next.js 呢？
 
-First, run the development server:
+因为使用 react 框架，开发出来的单页面富应用，是先从服务器请求下来 HTML、CSS、JS 文件，然后在客户端再进行解析。这样的话，会有一段时间的白屏，而且首屏加载速度很慢很慢，自己都受不了自己开发的项目速度这么慢了。本着要把事情做的更好的精神（其实就是受不了这么慢的加载速度），决定使用 next.js 框架对项目进行服务端渲染，加快访问速度。
 
-```bash
-npm run dev
-# or
-yarn dev
+
+
+### 使用路径别名
+
+首先
+
+```
+yarn add -D babel-plugin-module-resolver
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+然后再创建一个  `.babelrc` 文件
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+```
+{
+    "presets": ["next/babel"],
+    "plugins": [
+      [
+        "module-resolver",
+        {
+          "alias": {
+            "@/components": "./components",
+            "@/pages": "./pages",
+            "@/public": "./public",
+            "@/utils": "./utils"
+          }
+        }
+      ]
+    ]
+  }
+```
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+就可以了。比普通的 react 框架简单多了
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+### 使用 styled-components
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+首先安装
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+```
+yarn add styled-components
+```
 
-## Deploy on Vercel
+```
+ yarn add -D babel-plugin-styled-components
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+然后在   `.babelrc`  文件加上
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```
+["styled-components"]
+```
+
+也就是
+
+```diff
+{
+    "presets": ["next/babel"],
+    "plugins": [
+      [
+        "module-resolver",
+        {
+          "alias": {
+            "@/components": "./components",
+            "@/pages": "./pages",
+            "@/public": "./public",
+            "@/utils": "./utils"
+          }
+        }
+      ],
++      ["styled-components"]
+    ]
+  }
+```
+
+
+
+### 路由的重写
+
+将根目录重写为发现页，在  `next.config.js` 文件添加如下代码
+
+```diff
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
++  async redirects() {
++    return [
++      {
++        source: '/',
++        destination: '/discover',
++        permanent: true,
++      },
++    ]
++  }
++}
+
+module.exports = nextConfig
+```
+
+
+
+### 打包部署
+
+```
+yarn build
+```
+
+这个过程可能会遇到很多问题，根据控制台的问题提示和 Google 就能很快解决。
+
+打包之后，可以用于产线服务的代码就准备好了！之后，执行：`yarn start` 就可以把服务启动起来了
+
+可以通过 curl 访问验证一下服务有没有启动：
+
+```
+curl -v http://127.0.0.1:3000 # 如果没有更改端口的话
+```
+
+看到有返回信息，说用服务已经起来了。
+
